@@ -23,8 +23,12 @@ public:
 	int getSize() const {
 		return this->size;
 	}
-	string getName() {
+	string getName() const {
 		return this->name;
+	}
+
+	bool operator == (const Guest &other) const {
+		return this->name == other.getName();
 	}
 };
 
@@ -64,19 +68,12 @@ public:
 		}
 		return size;
 	}
-	string guestName(Guest g) {
-		return g.getName();
-	}
-	void tableLeave(Guest g) {
-		int size = 0;
-		std::vector<Guest>::iterator it_g = this->guestsOn.begin();
-		for (;it_g != this->guestsOn.end();it_g++) {
-			size += it_g->getSize();
-			if (it_g->getName() == g.getName()) {
-				guestsOn.erase(it_g);
-			}
-		}
-		this->freeSeats = this->capability - size + g.getSize();
+	bool tableLeave(Guest g) {
+		std::vector<Guest>::iterator it_g = find(this->guestsOn.begin(), this->guestsOn.end(), g);
+		if (it_g == this->guestsOn.end()) return false;
+		this->freeSeats += g.getSize();
+		this->guestsOn.erase(it_g);
+		return true;
 	}
 };
 
@@ -115,19 +112,18 @@ public:
 	bool onLeave(Guest g) {
 		std::vector<Table>::iterator it_tbl = this->tables.begin();
 		for (;it_tbl != this->tables.end();it_tbl++) {
-			if (it_tbl->guestName(g) == g.getName()) {
-				it_tbl->tableLeave(g);
-				std::vector<Table>::iterator it_tbl1 = this->tables.begin();
-				for (;it_tbl1 != this->tables.end();it_tbl1++) {
-					if (it_tbl1->getSizeT() >= this->maxsizeT) {
-						this->maxsizeT = it_tbl1->getSizeT();
+				if (it_tbl->tableLeave(g)) {
+					std::vector<Table>::iterator it_tbl1 = this->tables.begin();
+					for (;it_tbl1 != this->tables.end();it_tbl1++) {
+						if (it_tbl1->getSizeT() >= this->maxsizeT) {
+							this->maxsizeT = it_tbl1->getSizeT();
+						}
 					}
+					return true;
 				}
-				return true;
 			}
+			return false;
 		}
-		return false;
-	}
 
 	void getInfo() {
 		std::cout << ">TABLES" << std::endl;
@@ -138,10 +134,10 @@ public:
 //			(*it_tbl).printInfo();
 		}
 		if (!(guestQueue.empty())) {
-			cout << "Current queue:";
+			cout << "Current queue: ";
 			std::vector<Guest>::iterator it_gq = this->guestQueue.begin();
 			for (;it_gq != this->guestQueue.end();it_gq++) {
-				cout << " " << it_gq->getSize();
+				cout <<it_gq->getSize() << endl;
 			}
 		}
 	}
@@ -169,5 +165,7 @@ int main()
 	rest->onArrive(g4);
 	rest->onArrive(g5);
 	rest->onArrive(g6);
+	rest->getInfo();
+	rest->onLeave(g1);
 	rest->getInfo();
 }
