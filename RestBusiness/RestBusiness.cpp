@@ -95,8 +95,9 @@ public:
 		}
 	}
 
-	bool onArrive(Guest g) {
-		if (g.getSize() > this->maxsizeT) {
+bool onArrive(Guest g) {
+		if (g.getSize() > this->maxsizeT) {	
+			cout << "no table with size "<<g.getSize()<<" for guest with name: " << g.getName() << endl;
 			return false;
 		}
 		std::vector<Table>::iterator it_tbl2 = this->tables.begin();
@@ -182,6 +183,7 @@ int main()
 	Guest g5(2,"e");
 	Guest g6(6,"f");
 	Guest g7(3,"g");
+	Guest g8(8, "h");
 
 	rest->onArrive(g1);
 	rest->onArrive(g2);
@@ -190,6 +192,7 @@ int main()
 	rest->onArrive(g5);
 	rest->onArrive(g6);
 	rest->onArrive(g7);
+	rest->onArrive(g8);
 	rest->getInfo();
 	rest->onLeave(g1);
 	rest->getInfo();
