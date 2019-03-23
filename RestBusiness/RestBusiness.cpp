@@ -50,7 +50,6 @@ public:
 	void sitDown(Guest g) {
 		this->freeSeats = this->freeSeats - g.getSize();
 		guestsOn.push_back(g);
-		cout << "table " << this->name << " was occupied by group "<< g.getName() << " with size = " << g.getSize() << endl;
 	}
 
 	void printInfo() {
@@ -59,6 +58,9 @@ public:
 	}
 	int getSizeT() {
 		return this->freeSeats;
+	}
+	int getCapability() {
+		return this->capability;
 	}
 	int guestSize() { 
 		int size = 0;
@@ -94,6 +96,18 @@ public:
 	}
 
 	bool onArrive(Guest g) {
+		if (g.getSize() > this->maxsizeT) {
+			return false;
+		}
+		std::vector<Table>::iterator it_tbl2 = this->tables.begin();
+		for (int i = g.getSize();i <= this->maxsizeT;i++) {
+			for (it_tbl2 = this->tables.begin();it_tbl2 != this->tables.end();it_tbl2++) {
+				if (it_tbl2->getSizeT() == it_tbl2->getCapability() && i == it_tbl2->getSizeT()) {
+					it_tbl2->sitDown(g);
+					return true;
+				}
+			}
+		}
 		std::vector<Table>::iterator it_tbl = this->tables.begin();
 		for (int i = g.getSize();i <= this->maxsizeT;i++) {
 			for (it_tbl = this->tables.begin();it_tbl != this->tables.end();it_tbl++) {
@@ -102,9 +116,6 @@ public:
 					return true;
 				}
 			}
-		}
-		if (g.getSize() > this->maxsizeT) {
-			return false;
 		}
 		guestQueue.push_back(g);
 		return false;
@@ -117,6 +128,17 @@ public:
 					for (;it_tbl1 != this->tables.end();it_tbl1++) {
 						if (it_tbl1->getSizeT() >= this->maxsizeT) {
 							this->maxsizeT = it_tbl1->getSizeT();
+						}
+					}
+					for (int j = it_tbl->getSizeT();j >= 0;j--) {
+						std::vector<Guest>::iterator g1 = this->guestQueue.begin();
+						for (;g1 != this->guestQueue.end();g1++) {
+							if (g1->getSize() == j) {
+								if (onArrive((*g1))) {
+									guestQueue.erase(g1);
+									return true;
+								}
+							}
 						}
 					}
 					return true;
@@ -137,8 +159,9 @@ public:
 			cout << "Current queue: ";
 			std::vector<Guest>::iterator it_gq = this->guestQueue.begin();
 			for (;it_gq != this->guestQueue.end();it_gq++) {
-				cout <<it_gq->getSize() << endl;
+				cout <<it_gq->getSize()<<" ";
 			}
+			cout << endl;
 		}
 	}
 };
@@ -158,6 +181,7 @@ int main()
 	Guest g4(3,"d");
 	Guest g5(2,"e");
 	Guest g6(6,"f");
+	Guest g7(3,"g");
 
 	rest->onArrive(g1);
 	rest->onArrive(g2);
@@ -165,6 +189,7 @@ int main()
 	rest->onArrive(g4);
 	rest->onArrive(g5);
 	rest->onArrive(g6);
+	rest->onArrive(g7);
 	rest->getInfo();
 	rest->onLeave(g1);
 	rest->getInfo();
