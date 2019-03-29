@@ -9,7 +9,8 @@
 #include <deque>
 #include <algorithm>
 #include <random>
-#include <limits>   
+#include <limits>  
+#include <set> 
 
 using namespace std;
 
@@ -61,24 +62,41 @@ private:
     int notFreeSeats;
     string name;
     vector<Guest> guests;
+    uint64_t uid;
 
 public:
     Table(int capacity, string name) : name(name), isFree(true) {
         this->isFree = true;
         this->capacity = capacity;
         this->notFreeSeats = 0;
+        random_device dev;
+        mt19937 rng(dev());
+        uniform_int_distribution<std::mt19937::result_type> dist(
+            numeric_limits<uint64_t>::min(), numeric_limits<uint64_t>::max());
+        uid = dist(rng);
         cout << "create table with capacity = " << this->capacity << endl;
+    }
+
+    bool operator<(const Table& rhs) const {
+        int lhs_cap = capacity - notFreeSeats;
+        int rhs_cap = rhs.capacity - rhs.notFreeSeats;
+        if (lhs_cap == rhs_cap){
+            return uid < rhs.uid;
+        }
+        else{
+            return lhs_cap > rhs_cap;
+        }
     }
 
     bool IsFree() const{
         return this->isFree;
     }
 
-    int getCapacity(){
+    int getCapacity() const{
     	return capacity;
     }
 
-    int getFreeCap(){
+    int getFreeCap() const{
     	return capacity - notFreeSeats;
     }
 
@@ -93,6 +111,13 @@ public:
         return true;
     }
 
+    bool sitDownCheck(const Guest g) const {
+        if (g.getSize() > capacity - notFreeSeats){
+            return false;
+        }
+        return true;
+    }
+
     bool standUp(Guest g) {
     	vector<Guest>::iterator res = find(guests.begin(), guests.end(), g);
     	if (res == this->guests.end()){
@@ -104,36 +129,41 @@ public:
     	return true;
     }
 
+    bool standUpCheck(Guest g) const {
+        vector<Guest>::const_iterator res = find(guests.begin(), guests.end(), g);
+        if (res == this->guests.end()){
+            return false;
+        }
+        return true;
+    }
+
     void printInfo() const {
         cout << "Table \"" << name << "\", capacity = " << capacity << ", free seats = " << capacity - notFreeSeats << endl;
     }
 };
 
+
 class RestaurantManager {
 private:
-    vector<Table> tables;
     deque<Guest> guestQueue;
     int maxCap;
+    set<Table> tables;
+
 public:
-    RestaurantManager(vector<Table> tables){
+    RestaurantManager(set<Table> tables){
         this->tables = tables;
         updateCap();
         guestQueue = deque<Guest> ();
     }
 
     void updateCap(){
-    	maxCap = 0;
-        for (vector<Table>::iterator it = tables.begin(); it != tables.end(); it++) {
-			if (it->getFreeCap() > maxCap) {
-				maxCap = it->getFreeCap();
-			}
-		}
+    	maxCap = tables.begin()->getFreeCap();
     }
 
     void printInfo() {
     	printSep(20);
         cout << "Tables:" << endl;
-        for (vector<Table>::iterator it = tables.begin(); it != tables.end(); it++){
+        for (set<Table>::iterator it = tables.begin(); it != tables.end(); it++){
             it->printInfo();
         }
         printSep(20);
@@ -155,8 +185,12 @@ public:
 		// 2) есть ли свободный столик, куда "влезет" гость
 			// 2.1) если такой столик найден - сажаем туда гостя
 		if (maxCap >= g.getSize()){		
-			for (vector<Table>::iterator it = tables.begin(); it != tables.end(); it++) {
-				if (it->sitDown(g)) {
+			for (set<Table>::iterator it = tables.begin(); it != tables.end(); it++) {
+				if (it->sitDownCheck(g)) {
+                    Table tbl = *it;
+                    tables.erase(it);
+                    tbl.sitDown(g);
+                    tables.insert(tbl);
 					updateCap();
 					return true;
 				}
@@ -170,8 +204,12 @@ public:
     }
 
     bool onLeave(Guest g){
-    	for (vector<Table>::iterator it = tables.begin(); it != tables.end(); it++) {
-			if (it->standUp(g)) {
+    	for (set<Table>::iterator it = tables.begin(); it != tables.end(); it++) {
+			if (it->standUpCheck(g)) {
+                Table tbl = *it;
+                tables.erase(it);
+                tbl.standUp(g);
+                tables.insert(tbl);
 				updateCap();
 				return true;
 			}
@@ -187,7 +225,7 @@ int main()
     Table t2(3, "Table 2");
     Table t3(4, "Table 3");
 
-    vector<Table> tables = { t1, t2, t3 };
+    set<Table> tables = { t1, t2, t3 };
     RestaurantManager *rest = new RestaurantManager(tables);
     rest->printInfo();
 
