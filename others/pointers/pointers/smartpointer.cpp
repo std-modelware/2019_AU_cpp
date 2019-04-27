@@ -12,16 +12,18 @@ public:
 		// TODO:
 	}
 
-	SP(T *p) {
+	SP(T *p):pointer(p) {
 		// TODO:
 	}
 
 	operator T*() {
 		// TODO:
+		return pointer;
 	}
 
 	T* operator->() {
 		// TODO:
+		return pointer;
 	}
 
 	~SP() {
